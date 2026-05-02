@@ -1,11 +1,44 @@
+**Mối quan hệ**
+
+## Người A (Server core) → là nền tảng của tất cả
+
+B phụ thuộc vào A vì dao/service/ cần dùng các class từ model/ của A (ví dụ: User, Item, Auction...)
+C phụ thuộc vào A vì client giao tiếp qua network/ của A
+D phụ thuộc vào A vì AutoBidder, AntiSniping cần gọi vào AuctionManager của A
+
+→ Người A phải làm trước, vì B, C, D đều cần A xong mới làm được
+
+## Người B (Data layer) → phục vụ cho A và C
+
+B viết service/ để A có thể gọi logic nghiệp vụ
+C gián tiếp dùng kết quả từ B thông qua server (dữ liệu hiển thị lên giao diện đều từ DB của B)
+
+→ Người B làm song song với A, nhưng cần A định nghĩa model trước
+
+## Người C (Client) → phụ thuộc vào A và B
+
+C chỉ bắt đầu làm hiệu quả khi A đã có network/ và B đã có service/ chạy được
+C không ảnh hưởng ngược lại A hay B
+
+→ Người C nên làm sau, hoặc làm giao diện trước rồi kết nối sau
+
+## Người D (Advanced + Test) → làm cuối cùng
+
+Test cần A, B, C hoàn thiện mới test được
+AutoBidder, AntiSniping cần server của A chạy ổn định trước
+
+→ Người D làm cuối, nhưng có thể setup CI/CD và viết test case sớm
+
+---
+
 ## 👥 Thành viên nhóm
 
-| Họ tên | Vai trò |
-|--------|---------|
-| Người A | Server: Model, Network, Observer, AuctionManager |
-| Người B | Server: DAO, Service, Factory, Exception, Unit Test |
-| Người C | Client: JavaFX Controller, FXML, ServerConnection |
-| Người D | Advanced: AutoBidder, AntiSniping, BidHistoryChart, Maven |
+| Họ tên | Phụ trách |
+|--------|-----------|
+| Người A | Server core: `model/`, `Main.java`, `network/`, `manager/` |
+| Người B | Server data: `dao/`, `service/`, `factory/`, `exception/`, `database/` |
+| Người C | Client: `controller/`, `network/`, `chart/`, toàn bộ `.fxml` |
+| Người D | Advanced: `AutoBidder.java`, `AntiSnipingTimer.java`, `BidHistoryVisualizer.java`, `test/`, `pom.xml`, CI/CD |
 
 ---
 
@@ -105,7 +138,7 @@ mvn compile
 
 ### Bước 5 – Chạy Server (Terminal 1)
 ```bash
-mvn exec:java '-Dexec.mainClass=com.auction.Main'
+mvn exec:java -Dexec.mainClass="com.auction.Main"
 ```
 Chờ thấy dòng: `=== Auction Server started on port 9999 ===`
 
@@ -144,40 +177,40 @@ BUILD SUCCESS
 
 ```
 AuctionSystem/
-├── .github/workflows/ci.yml     ← CI/CD GitHub Actions
-├── pom.xml                      ← Maven config
+├── .github/workflows/ci.yml     ← CI/CD GitHub Actions        ← Người D
+├── pom.xml                      ← Maven config                ← Người D
 ├── database/
-│   ├── scheme.sql               ← Tạo bảng MySQL
-│   └── sample_data.sql          ← Dữ liệu mẫu
-├── server/src/main/java/com/auction/
-│   ├── Main.java                ← Khởi động Server
-│   ├── model/                   ← Entity, User, Item, Auction...
-│   ├── dao/                     ← Truy cập database (JDBC)
-│   ├── service/                 ← Logic nghiệp vụ
-│   ├── network/                 ← Socket Server
-│   ├── manager/                 ← AuctionManager (Singleton)
-│   ├── factory/                 ← ItemFactory (Factory Pattern)
-│   ├── observer/                ← BidObserver (Observer Pattern)
-│   └── exception/               ← Custom Exceptions
+│   ├── scheme.sql               ← Tạo bảng MySQL              ← Người B
+│   └── sample_data.sql          ← Dữ liệu mẫu                 ← Người B
+├── sever/src/main/java/com/auction/
+│   ├── Main.java                ← Khởi động Server            ← Người A
+│   ├── model/                   ← Entity, User, Item, Auction  ← Người A
+│   ├── dao/                     ← Truy cập database (JDBC)    ← Người B
+│   ├── service/                 ← Logic nghiệp vụ             ← Người B
+│   ├── network/                 ← Socket Server               ← Người A
+│   ├── manager/                 ← AuctionManager (Singleton)  ← Người A
+│   ├── factory/                 ← ItemFactory (Factory)       ← Người B
+│   ├── observer/                ← BidObserver (Observer)      ← Người A
+│   └── exception/               ← Custom Exceptions           ← Người B
 ├── client/src/main/java/com/auction/
-│   ├── MainApp.java             ← Khởi động JavaFX Client
-│   ├── controller/              ← JavaFX Controllers (MVC)
-│   ├── network/                 ← ServerConnection
-│   └── chart/                   ← BidHistoryChart
+│   ├── MainApp.java             ← Khởi động JavaFX Client     ← Người C
+│   ├── controller/              ← JavaFX Controllers (MVC)    ← Người C
+│   ├── network/                 ← ServerConnection            ← Người C
+│   └── chart/                   ← BidHistoryChart             ← Người C
 ├── client/src/main/resources/com/auction/view/
-│   ├── login.fxml
-│   ├── auction_list.fxml
-│   ├── bid_screen.fxml
-│   └── seller_panel.fxml
+│   ├── login.fxml                                             ← Người C
+│   ├── auction_list.fxml                                      ← Người C
+│   ├── bid_screen.fxml                                        ← Người C
+│   └── seller_panel.fxml                                      ← Người C
 ├── advanced/src/main/java/
-│   ├── AutoBidder.java          ← Đấu giá tự động
-│   ├── AntiSnipingTimer.java    ← Gia hạn phiên
-│   └── BidHistoryVisualizer.java
+│   ├── AutoBidder.java          ← Đấu giá tự động             ← Người D
+│   ├── AntiSnipingTimer.java    ← Gia hạn phiên               ← Người D
+│   └── BidHistoryVisualizer.java ← Biểu đồ lịch sử giá       ← Người D
 └── test/src/test/java/
-    ├── AuctionTest.java
-    ├── BidValidationTest.java
-    ├── ItemFactoryTest.java
-    └── UserServiceTest.java
+    ├── AuctionTest.java                                       ← Người D
+    ├── BidValidationTest.java                                 ← Người D
+    ├── ItemFactoryTest.java                                   ← Người D
+    └── UserServiceTest.java                                   ← Người D
 ```
 
 ---
