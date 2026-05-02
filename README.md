@@ -138,7 +138,7 @@ mvn compile
 
 ### Bước 5 – Chạy Server (Terminal 1)
 ```bash
-mvn exec:java -Dexec.mainClass="com.auction.Main"
+mvn exec:java -'Dexec.mainClass="com.auction.Main'
 ```
 Chờ thấy dòng: `=== Auction Server started on port 9999 ===`
 
